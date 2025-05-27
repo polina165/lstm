@@ -14,7 +14,7 @@ print(f"Входы:{inputs}")
 
 model = tf.keras.Sequential([
     tf.keras.layers.Input(shape=(5,)),
-    tf.keras.layers.Dense(5, activation='relu', kernel_initializer=tf.keras.initializers.GlorotUniform(seed=42))
+    tf.keras.layers.Dense(5, activation='softmax', kernel_initializer=tf.keras.initializers.GlorotUniform(seed=42))
 ])
 
 model.compile(optimizer='adam',
@@ -28,23 +28,52 @@ weights,biases = weight
 print(f"Веса:\n{weights}")
 print(f"Смещения:\n{biases}")
 
-activation_function = model.layers[0].activation
+#activation_function = model.layers[0].activation
 #print(f"Функция активация: {activation_function([-1, 1])}") # пример использования функции активации из слоя
 
 etalon_output = model.predict(inputs)
 print(f"Выходы модели:\n{etalon_output}")
 
-def dense_output(weights, inputs, biases):
-    output = []  
+def relu(x):
+    return np.maximum(0, x)
+
+def softmax(x):
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum(axis=-1, keepdims=True)
+
+def dense_function(inputs, weights, biases, activation=None):
+    inputs = np.array(inputs)
+    if inputs.ndim == 1:
+        inputs = inputs.reshape(1, -1) 
     
-    for i in range(len(inputs[0])):
+    weights = np.array(weights)
+    biases = np.array(biases)
+    
+    n_neurons = weights.shape[1]  
+    n_inputs = weights.shape[0]  
+    
+    output = []
+    
+    for i in range(n_neurons):  
         weighted_sum = 0
-        for j in range(len(biases)):
-            weighted_sum += inputs[0][j] * weights[j][i]
-        weighted_sum += biases[i]
-        output.append(activation_function(weighted_sum)) 
+        for j in range(n_inputs): 
+            weighted_sum += inputs[0][j] * weights[j][i]  
+        
+        weighted_sum += biases[i]  
+        
+        if activation == 'relu':
+            output.append(relu(weighted_sum))
+        elif activation == 'softmax':
+            output.append(weighted_sum)
+        else:
+            output.append(weighted_sum)
+    
+    output = np.array(output)
+    
+    if activation == 'softmax':
+        output = softmax(output)
+    
+    return output 
 
-    return np.array(output)  
-
-function_output = dense_output(weights, inputs, biases)
+function_output = dense_function(inputs, weights, biases, activation='softmax')
 print(f"Выходы с помощью функции:\n{function_output}")
