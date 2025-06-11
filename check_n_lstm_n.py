@@ -2,95 +2,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.datasets import mnist
+from dense_function import dense_function
+from lstm_function import lstm_function
 
-def relu(x):
-    return np.maximum(0, x)  
-
-def softmax(x):
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum(axis=-1, keepdims=True)
-
-def dense_function(inputs, weights, biases, activation=None):
-    inputs = np.array(inputs)
-    if inputs.ndim == 1:
-        inputs = inputs.reshape(1, -1) 
-    
-    weights = np.array(weights)
-    biases = np.array(biases)
-    
-    n_neurons = weights.shape[1]  
-    n_inputs = weights.shape[0]  
-    
-    output = []
-    
-    for i in range(n_neurons):  
-        weighted_sum = 0
-        for j in range(n_inputs): 
-            weighted_sum += inputs[0][j] * weights[j][i]  
-        
-        weighted_sum += biases[i]  
-        
-        if activation == 'relu':
-            output.append(relu(weighted_sum))
-        elif activation == 'softmax':
-            output.append(weighted_sum)
-        else:
-            output.append(weighted_sum)
-    
-    output = np.array(output)
-    
-    if activation == 'softmax':
-        output = softmax(output)
-    
-    return output
-
-
-def lstm_function(inputs, weights, return_sequences=False):
-    W, R, b = weights
-    batch_size, timesteps, inputdim = inputs.shape
-    units = R.shape[0] 
-    
-    gate_size = units * 4
-    
-    if return_sequences:
-        outputs = np.zeros((batch_size, timesteps, units))
-    else:
-        outputs = np.zeros((batch_size, units))
-
-    for sample_idx in range(batch_size):
-        h = np.zeros(units)
-        c = np.zeros(units)
-
-        for t in range(timesteps):
-            x = inputs[sample_idx, t, :]
-            
-            gates = np.zeros(gate_size)
-            
-            for k in range(gate_size):
-    
-                for i in range(inputdim):
-                    gates[k] += x[i] * W[i, k]
-                
-                for j in range(units):
-                    gates[k] += h[j] * R[j, k]
-                
-                gates[k] += b[k]
-            
-            i = tf.sigmoid(gates[:units])          
-            f = tf.sigmoid(gates[units:2*units])   
-            c_t = np.tanh(gates[2*units:3*units])  
-            o = tf.sigmoid(gates[3*units:])        
-            
-            c = f * c + i * c_t
-            h = o * np.tanh(c)
-            
-            if return_sequences:
-                outputs[sample_idx, t] = h
-        
-        if not return_sequences:
-            outputs[sample_idx] = h
-
-    return outputs
 
 model = load_model('n_lstm_n.h5')
 
